@@ -1,27 +1,121 @@
-<!DOCTYPE html><html><title>RADAR</title><body bgcolor=#fff style=margin:0;overflow:hidden>
-<div style=position:relative;width:256px;margin:auto>
- <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none">+</div>
- <div id=V style=background:#C4A484;width:256px;height:256px></div>
- <div style="position:absolute;top:10;right:10;width:75px;border-bottom:2px solid #000;text-align:right;font:10px sans-serif">50km</div>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RADAR - Precision View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { background: #fff; margin: 0; overflow: hidden; font-family: sans-serif; }
+    #V { background: #C4A484; width: 256px; height: 256px; position: relative; overflow: hidden; }
+    .crosshair { 
+      position: absolute; top: 50%; left: 50%; 
+      transform: translate(-50%, -50%); z-index: 9; 
+      pointer-events: none; color: red; font-weight: bold; 
+    }
+    .container { position: relative; width: 256px; margin: 10px auto; border: 1px solid #ccc; }
+    .scale { 
+      position: absolute; top: 10px; right: 10px; width: 75px; 
+      border-bottom: 2px solid #000; text-align: right; font: 10px sans-serif; 
+    }
+    .controls { text-align: center; }
+    input { width: 40px; margin: 2px; }
+    button { cursor: pointer; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="crosshair">+</div>
+  <div id="V"></div>
+  <div class="scale">~50km</div>
 </div>
-<div style=text-align:center>
- <button onclick=c(-1)><</button><button onclick=g()>GPS</button><button onclick=m()>GO</button><button onclick=c(1) Gold>></button>
- <button onclick="lt.value=47.6;ln.value=-122.3;m()">T</button><br>
- <input id=lt placeholder=Lat size=3><input id=ln placeholder=Lon size=3>
- <p id=M style=margin:0>...</p>
+
+<div class="controls">
+  <button onclick="c(-1)">&lt;</button>
+  <button onclick="g()">GPS</button>
+  <button onclick="m()">GO</button>
+  <button onclick="c(1)">&gt;</button>
+  <button onclick="lt.value=47.6;ln.value=-122.3;m()">SEA</button>
+  <br>
+  <input id="lt" placeholder="Lat">
+  <input id="ln" placeholder="Lon">
+  <p id="M" style="margin:5px 0">Ready</p>
 </div>
+
 <script>
-V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;
-f=(y,x)=>{
- fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
-  t=j.radar.past.at(-1).time;v=64;r=y*Math.PI/180;
-  X=0|(x+180)/360*v;Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
-  H.push({u:`${j.host}/v2/radar/${t}/256/6/${X}/${Y}/0/0_0.png`,s:new Date(t*1000).toLocaleTimeString()});
-  I=H.length-1;d()
- }).catch(e=>M.innerText='!');
-};
-d=()=>{if(H[I]){V.innerHTML=`<img src="${H[I].u}" width=256 height=256 style=display:block>`;M.innerText=H[I].s}};
-c=n=>{if(H[I+n]){I+=n;d()}};
-m=()=>f(1*lt.value,1*ln.value);
-g=()=>navigator.geolocation.getCurrentPosition(p=>f(p.coords.latitude,p.coords.longitude),e=>M.innerText='!',{timeout:15000});
-</script></html>
+  const V = document.getElementById('V');
+  const M = document.getElementById('M');
+  const lt = document.getElementById('lt');
+  const ln = document.getElementById('ln');
+  let H = []; 
+  let I = -1;
+
+  const f = (lat, lon) => {
+    M.innerText = 'Loading...';
+    fetch('https://api.rainviewer.com/public/weather-maps.json')
+      .then(r => r.json())
+      .then(j => {
+        const t = j.radar.past.at(-1).time;
+        const zoom = 6;
+        const n = Math.pow(2, zoom);
+        const rad = lat * Math.PI / 180;
+
+        // Calculate precise floating-point tile coordinates
+        const fX = (lon + 180) / 360 * n;
+        const fY = (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * n;
+
+        // Integer tile for the API request
+        const iX = Math.floor(fX);
+        const iY = Math.floor(fY);
+
+        // Calculate pixel offset to center the specific lat/lon
+        // (0.5 centers the tile, then we subtract the fractional remainder)
+        const offX = Math.round((0.5 - (fX - iX)) * 256);
+        const offY = Math.round((0.5 - (fY - iY)) * 256);
+
+        const imgUrl = `${j.host}/v2/radar/${t}/256/${zoom}/${iX}/${iY}/0/0_0.png`;
+        const timeStr = new Date(t * 1000).toLocaleTimeString();
+
+        H.push({
+          u: imgUrl,
+          s: timeStr,
+          transform: `translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px))`
+        });
+
+        I = H.length - 1;
+        d();
+      })
+      .catch(e => {
+        console.error(e);
+        M.innerText = 'Error!';
+      });
+  };
+
+  const d = () => {
+    if (H[I]) {
+      // We position the image absolutely and use the calculated transform
+      V.innerHTML = `<img src="${H[I].u}" style="position:absolute; top:50%; left:50%; transform:${H[I].transform}; display:block;">`;
+      M.innerText = H[I].s;
+    }
+  };
+
+  const c = n => { if (H[I + n]) { I += n; d(); } };
+  const m = () => f(parseFloat(lt.value), parseFloat(ln.value));
+  const g = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        p => {
+          lt.value = p.coords.latitude.toFixed(4);
+          ln.value = p.coords.longitude.toFixed(4);
+          f(p.coords.latitude, p.coords.longitude);
+        },
+        e => { M.innerText = 'GPS Denied'; },
+        { timeout: 10000 }
+      );
+    } else {
+      M.innerText = 'No GPS Support';
+    }
+  };
+</script>
+
+</body>
+</html>

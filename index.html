@@ -2,33 +2,25 @@
 <div style=position:relative;width:256px;margin:auto>
  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none">+</div>
  <div id=V style=background:#C4A484;width:256px;height:256px></div>
- <div style="display:flex;justify-content:space-between;width:256px;border-bottom:2px solid #000;font:10px sans-serif">
-  <span id=M>...</span>
-  <span style="width:75px;border-left:1px solid #000;text-align:right">50km</span>
- </div>
+ <div style="position:absolute;bottom:40;right:10;width:75px;border-bottom:2px solid #000;text-align:right;font:10px sans-serif">50km</div>
 </div>
-<div style=text-align:center;margin-top:5px>
- <button onclick=c(-1) style=width:40px><</button>
- <button onclick=g()>GPS</button>
- <button onclick=m()>GO</button>
- <button onclick=c(1) style=width:40px>></button><br>
- <input id=lt placeholder=Lat size=3> <input id=ln placeholder=Lon size=3>
+<div style=text-align:center>
+ <button onclick=c(-1)><</button><button onclick=g()>GPS</button><button onclick=m()>GO</button><button onclick=c(1)>></button><br>
+ <input id=lt placeholder=Lat size=3><input id=ln placeholder=Lon size=3>
+ <p id=M style=margin:0>...</p>
 </div>
 <script>
 V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;
 f=(y,x)=>{
- M.innerText='...';
  fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
-  t=j.radar.past[j.radar.past.length-1].time;
-  v=64;r=y*Math.PI/180;
-  X=0|(x+180)/360*v; Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
-  u=`${j.host}/v2/radar/${t}/256/6/${X}/${Y}/0/0_0.png`;
-  s=new Date(t*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  H.push({u,s});I=H.length-1;d();
+  t=j.radar.past.at(-1).time;v=64;r=y*Math.PI/180;
+  X=0|(x+180)/360*v;Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
+  H.push({u:`${j.host}/v2/radar/${t}/256/6/${X}/${Y}/0/0_0.png`,s:new Date(t*1000).toLocaleTimeString()});
+  I=H.length-1;d()
  }).catch(e=>M.innerText='!');
 };
 d=()=>{if(H[I]){V.innerHTML=`<img src="${H[I].u}" width=256 height=256 style=display:block>`;M.innerText=H[I].s}};
-c=(n)=>{if(H[I+n]){I+=n;d()}};
+c=n=>{if(H[I+n]){I+=n;d()}};
 m=()=>f(1*lt.value,1*ln.value);
-g=()=>navigator.geolocation.getCurrentPosition(p=>f(p.coords.latitude,p.coords.longitude),e=>M.innerText='G'+e.code,{timeout:15000});
+g=()=>navigator.geolocation.getCurrentPosition(p=>f(p.coords.latitude,p.coords.longitude),e=>M.innerText='!',{timeout:15000});
 </script></html>

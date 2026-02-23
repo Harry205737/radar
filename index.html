@@ -5,17 +5,14 @@
 </div>
 <div style="position:fixed;top:10px;right:calc(50% - 118px);width:75px;border-bottom:2px solid #000;text-align:right">50km</div>
 <p id=M style="margin:5px">Ready</p>
-<button onclick=c(-1)><</button>
-<button onclick=g()>GPS</button>
-<button onclick=m()>GO</button>
-<button onclick=c(1) style="color:gold">></button>
-<br><input id=lt placeholder="Lat" size=5><input id=ln placeholder="Lon" size=5>
+<button onclick=c(-1)><</button><button onclick=g()>GPS</button><button onclick=m()>GO</button><button onclick=c(1) style=color:gold>></button><button onclick=f(47.6,-122.3)>T</button>
+<br><input id=lt placeholder=Lat size=5><input id=ln placeholder=Lon size=5>
 <script>
 V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;
 f=(y,x)=>{
  M.innerText='...';
  fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
-  t=j.radar.past.at(-1).time; z=6; n=Math.pow(2,z); r=y*Math.PI/180;
+  t=j.radar.past.at(-1).time; z=6; n=2**z; r=y*Math.PI/180;
   fX=(x+180)/360*n; fY=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n;
   iX=0|fX; iY=0|fY;
   oX=(.5-(fX-iX))*256; oY=(.5-(fY-iY))*256;

@@ -1,27 +1,21 @@
-<!DOCTYPE html><html><title>R</title><body bgcolor=#fff style=margin:0;overflow:hidden>
-<div style=position:relative;width:256px;margin:auto>
- <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none">+</div>
- <div id=V style=background:#C4A484;width:256px;height:256px></div>
- <div style="position:absolute;top:10;right:10;width:75px;border-bottom:2px solid #000;text-align:right;font:10px sans-serif">50km</div>
+<!DOCTYPE html><body bgcolor=#000 style=color:#fff;text-align:center>
+<div style="position:relative;width:256px;margin:20px auto;border:2px solid #555">
+ <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9">+</div>
+ <div id=V style="height:256px;background:#222"></div>
 </div>
-<div style=text-align:center>
- <button onclick=c(-1)><</button><button onclick=g()>GPS</button><button onclick=m()>GO</button><button onclick=c(1) Gold>></button>
- <button onclick="lt.value=47.6;ln.value=-122.3;m()">T</button><br>
- <input id=lt placeholder=Lat size=3><input id=ln placeholder=Lon size=3>
- <p id=M style=margin:0>...</p>
-</div>
+<input id=a placeholder=Lat size=3><input id=o placeholder=Lon size=3>
+<button onclick=g()>GPS</button><button onclick=m()>GO</button>
+<p id=M>...</p>
 <script>
-V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;
-f=(y,x)=>{
- fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
-  t=j.radar.past.at(-1).time;v=64;r=y*Math.PI/180;
-  X=0|(x+180)/360*v;Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
-  H.push({u:`${j.host}/v2/radar/${t}/256/6/${X}/${Y}/0/0_0.png`,s:new Date(t*1000).toLocaleTimeString()});
-  I=H.length-1;d()
- }).catch(e=>M.innerText='!');
-};
-d=()=>{if(H[I]){V.innerHTML=`<img src="${H[I].u}" width=256 height=256 style=display:block>`;M.innerText=H[I].s}};
-c=n=>{if(H[I+n]){I+=n;d()}};
-m=()=>f(1*lt.value,1*ln.value);
-g=()=>navigator.geolocation.getCurrentPosition(p=>f(p.coords.latitude,p.coords.longitude),e=>M.innerText='!',{timeout:15000});
-</script></html>
+let J,f=(y,x)=>{
+  if(!J)return fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(d=>{J=d;f(y,x)});
+  let t=J.radar.past.at(-1).time,v=64,r=y*Math.PI/180,
+  X=0|(x+180)/360*v,
+  Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
+  V.innerHTML=`<img src="https://tile.openstreetmap.org/6/${X}/${Y}.png" style="position:absolute;left:0"><img src="${J.host}/v2/radar/${t}/256/6/${X}/${Y}/2/1_1.png" style="position:absolute;left:0">`;
+  M.innerText=new Date(t*1000).toLocaleTimeString()
+},
+m=()=>f(1*a.value,1*o.value),
+g=()=>navigator.geolocation.getCurrentPosition(p=>{a.value=p.coords.latitude;o.value=p.coords.longitude;m()});
+f(47.6,-122.3); // Default load
+</script>

@@ -1,20 +1,21 @@
 <!DOCTYPE html><html><title>R</title><body bgcolor=#fff style=margin:0;overflow:hidden>
 <div style=position:relative;width:256px;margin:auto>
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none">+</div>
-<div id=V style=background:#C4A484;width:256px;height:256px></div>
-<div style="position:absolute;bottom:10;right:10;width:75px;border-bottom:2px solid #000;text-align:right">50km</div>
+ <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none">+</div>
+ <div id=V style=background:#C4A484;width:256px;height:256px></div>
+ <div style="display:flex;justify-content:space-between;width:256px;border-bottom:2px solid #000;font:10px sans-serif">
+  <span id=M>...</span>
+  <span style="width:75px;border-left:1px solid #000;text-align:right">50km</span>
+ </div>
 </div>
-<div style=text-align:center>
-<button onclick=c(-1)><</button>
-<button onclick=g()>GPS</button>
-<button onclick=m()>GO</button>
-<button onclick=c(1)>></button><br>
-<input id=lt placeholder=Lat size=3> <input id=ln placeholder=Lon size=3>
-<p id=M style=margin:5px>...</p>
+<div style=text-align:center;margin-top:5px>
+ <button onclick=c(-1) style=width:40px><</button>
+ <button onclick=g()>GPS</button>
+ <button onclick=m()>GO</button>
+ <button onclick=c(1) style=width:40px>></button><br>
+ <input id=lt placeholder=Lat size=3> <input id=ln placeholder=Lon size=3>
 </div>
 <script>
-V=document.getElementById('V');M=document.getElementById('M');
-H=[];I=-1; // History array and Index
+V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;
 f=(y,x)=>{
  M.innerText='...';
  fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
@@ -22,7 +23,7 @@ f=(y,x)=>{
   v=64;r=y*Math.PI/180;
   X=0|(x+180)/360*v; Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
   u=`${j.host}/v2/radar/${t}/256/6/${X}/${Y}/0/0_0.png`;
-  s=new Date(t*1000).toLocaleTimeString();
+  s=new Date(t*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   H.push({u,s});I=H.length-1;d();
  }).catch(e=>M.innerText='!');
 };

@@ -1,10 +1,27 @@
 <title>RADAR</title><body style="margin:0;background:#fff;color:#000;overflow:hidden;font-family:sans-serif">
-<div id=V style="display:grid;grid-template-columns:repeat(3,128px);width:384px;margin:20px auto;background:#C4A484;border:2px solid #8d6944"></div>
+<div style="text-align:center;padding:5px;font-weight:bold">N</div>
+<div id=V style="display:grid;grid-template-columns:repeat(3,128px);width:384px;margin:0 auto;background:#C4A484;border:2px solid #8d6944;position:relative">
+  <div style="position:absolute;top:50%;left:-20px;transform:translateY(-50%)">W</div>
+  <div style="position:absolute;top:50%;right:-20px;transform:translateY(-50%)">E</div>
+  <div style="position:absolute;bottom:5;right:5;width:107px;border-bottom:3px solid #000;font-size:9px;text-align:right">100km</div>
+</div>
+<div style="text-align:center;padding:5px;font-weight:bold">S</div>
+
+<div style="margin:10px auto;width:300px;text-align:center;font-size:10px">
+  <span style="background:#93c701;padding:2px 8px">LIGHT</span>
+  <span style="background:#ffd701;padding:2px 8px">MOD</span>
+  <span style="background:#f05514;color:#fff;padding:2px 8px">HEAVY</span>
+  <span style="background:#9000a1;color:#fff;padding:2px 8px">INTENSE</span>
+</div>
+
 <div style="position:fixed;bottom:10;width:100%;text-align:center">
-<button onclick=n() style="padding:8px 16px;cursor:pointer">GPS SCAN</button><p id=M>Ready</p></div><script>
+  <button onclick=n() style="padding:8px 16px">GPS SCAN</button><p id=M>Ready</p>
+</div>
+
+<script>
 Z=6;S=256;M=document.getElementById('M');V=document.getElementById('V');
 n=()=>navigator.geolocation.getCurrentPosition(async p=>{
-  M.innerText='Fetching...';V.innerHTML='';
+  M.innerText='Scanning...';V.innerHTML=V.innerHTML.slice(0,360); // Keep UI markers
   y=p.coords.latitude;x=p.coords.longitude;
   n=2**Z;r=y*Math.PI/180;
   X=Math.floor((x+180)/360*n);
@@ -17,7 +34,7 @@ n=()=>navigator.geolocation.getCurrentPosition(async p=>{
       img.src=`${h}/v2/radar/${t}/${S}/${Z}/${f}/${g}/1/1_1.png`;
       V.appendChild(img);
     }
-    M.innerText=`Radar: ${new Date(t*1000).toLocaleTimeString()}`;
-  }catch(e){M.innerText='Err: Check Data'}
+    M.innerText=`Radar Time: ${new Date(t*1000).toLocaleTimeString()}`;
+  }catch(e){M.innerText='Sync Err'}
 },e=>M.innerText='GPS Error');
 </script>

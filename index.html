@@ -1,40 +1,43 @@
 <title>RADAR</title><body style="margin:0;background:#fff;color:#000;overflow:hidden;font-family:sans-serif">
-<div style="text-align:center;padding:5px;font-weight:bold">N</div>
-<div id=V style="display:grid;grid-template-columns:repeat(3,128px);width:384px;margin:0 auto;background:#C4A484;border:2px solid #8d6944;position:relative">
-  <div style="position:absolute;top:50%;left:-20px;transform:translateY(-50%)">W</div>
-  <div style="position:absolute;top:50%;right:-20px;transform:translateY(-50%)">E</div>
-  <div style="position:absolute;bottom:5;right:5;width:107px;border-bottom:3px solid #000;font-size:9px;text-align:right">100km</div>
+<div id=C style="position:relative;width:384px;margin:20px auto">
+  <div style="position:absolute;top:50%;left:50%;width:30px;height:30px;border:1px solid #000;border-radius:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none"></div>
+  <div style="position:absolute;top:50%;left:50%;width:1px;height:100%;background:rgba(0,0,0,0.2);transform:translate(-50%,-50%);z-index:9;pointer-events:none"></div>
+  <div style="position:absolute;top:50%;left:50%;width:100%;height:1px;background:rgba(0,0,0,0.2);transform:translate(-50%,-50%);z-index:9;pointer-events:none"></div>
+  
+  <div id=V style="display:grid;grid-template-columns:repeat(3,128px);background:#C4A484;border:2px solid #8d6944;min-height:384px"></div>
+  
+  <div style="position:absolute;bottom:10;right:10;width:75px;border-bottom:3px solid #000;font-size:10px;text-align:right;font-weight:bold;z-index:10">50km</div>
 </div>
-<div style="text-align:center;padding:5px;font-weight:bold">S</div>
 
-<div style="margin:10px auto;width:300px;text-align:center;font-size:10px">
+<div style="margin:10px auto;width:320px;text-align:center;font-size:10px">
   <span style="background:#93c701;padding:2px 8px">LIGHT</span>
   <span style="background:#ffd701;padding:2px 8px">MOD</span>
   <span style="background:#f05514;color:#fff;padding:2px 8px">HEAVY</span>
-  <span style="background:#9000a1;color:#fff;padding:2px 8px">INTENSE</span>
+  <span style="background:#9000a1;color:#fff;padding:2px 8px">EXTREME</span>
 </div>
 
 <div style="position:fixed;bottom:10;width:100%;text-align:center">
-  <button onclick=n() style="padding:8px 16px">GPS SCAN</button><p id=M>Ready</p>
+  <button onclick=n() style="padding:10px 20px;font-weight:bold;cursor:pointer">REFRESH RADAR</button>
+  <p id=M style="margin:5px 0">Ready</p>
 </div>
 
 <script>
 Z=6;S=256;M=document.getElementById('M');V=document.getElementById('V');
 n=()=>navigator.geolocation.getCurrentPosition(async p=>{
-  M.innerText='Scanning...';V.innerHTML=V.innerHTML.slice(0,360); // Keep UI markers
+  M.innerText='Scanning...';V.innerHTML='';
   y=p.coords.latitude;x=p.coords.longitude;
-  n=2**Z;r=y*Math.PI/180;
-  X=Math.floor((x+180)/360*n);
-  Y=Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n);
+  n_val=2**Z;r=y*Math.PI/180;
+  X=Math.floor((x+180)/360*n_val);
+  Y=Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n_val);
   try{
     j=await(await fetch('https://api.rainviewer.com/public/weather-maps.json')).json();
     t=j.radar.past[j.radar.past.length-1].time;h=j.host;
     for(g=Y-1;g<=Y+1;g++)for(f=X-1;f<=X+1;f++){
-      img=new Image();img.style.width='128px';
+      img=new Image();img.style.width='128px';img.style.display='block';
       img.src=`${h}/v2/radar/${t}/${S}/${Z}/${f}/${g}/1/1_1.png`;
       V.appendChild(img);
     }
-    M.innerText=`Radar Time: ${new Date(t*1000).toLocaleTimeString()}`;
-  }catch(e){M.innerText='Sync Err'}
+    M.innerText=`Live: ${new Date(t*1000).toLocaleTimeString()}`;
+  }catch(e){M.innerText='Sync Error'}
 },e=>M.innerText='GPS Error');
 </script>

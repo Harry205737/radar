@@ -1,36 +1,29 @@
-<title>AU_ALL</title><body style="font-family:sans-serif;background:#222;color:#eee">
-<b>AU MASTER LOCATOR</b><br>
-<input id=Q oninput=S() placeholder="Search 15,000+ towns..." style="width:90%;padding:8px;margin:5px 0">
-<p id=M style="font-size:12px">Offline Mode Active</p>
-<div id=R></div><script>
-// Data Format: "Name,LatDiff,LonDiff" 
-// We use a giant string and split it. This is faster than JSON for 15k entries.
-D="Sydney,0,0|Melbourne,-394,-625|Sunbury,25,10|Wagga,269,241|Perth,586,-3151"; // This string would hold the 15k towns
-T=[]; l=0; o=0;
-D.split('|').map(x=>{
-  [n,da,do_]=x.split(',');
-  l+=parseInt(da)/100; o+=parseInt(do_)/100; // Delta decoding
-  T.push({n,la:l.toFixed(2),lo:o.toFixed(2)});
-});
-
-S=()=>{
-  q=Q.value.toLowerCase(); R.innerHTML='';
-  if(q.length<3) return;
-  f=T.filter(x=>x.n.toLowerCase().includes(q)).slice(0,20);
-  M.innerText=f.length?`Found ${f.length} (showing top 20)`:'No matches';
-  f.map(x=>R.innerHTML+=`<div style="background:#333;padding:10px;margin-bottom:2px;border-left:4px solid #007aff">
-    <b>${x.n}</b><br><code style="color:#0f0">${x.la}, ${x.lo}</code>
-    <button onclick="C(${x.la},${x.lo})" style="float:right">Dist</button></div>`);
-};
-
-// Distance logic for survival navigation
-C=(la,lo)=>{
-  navigator.geolocation.getCurrentPosition(p=>{
-    y=p.coords;
-    R=6371; dLa=(la-y.latitude)*Math.PI/180; dLo=(lo-y.longitude)*Math.PI/180;
-    a=Math.sin(dLa/2)**2+Math.cos(y.latitude*Math.PI/180)*Math.cos(la*Math.PI/180)*Math.sin(dLo/2)**2;
-    d=R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
-    alert(`Distance to ${la},${lo}: ${d.toFixed(1)} km`);
-  });
-};
+<title>RADAR</title><body style="margin:0;background:#000;color:#eee;overflow:hidden;font-family:sans-serif">
+<div id=V style="display:grid;grid-template-columns:repeat(3,128px);width:384px;margin:auto"></div>
+<div style="position:fixed;bottom:10;width:100%;text-align:center">
+<button onclick=n()>GPS SCAN</button><p id=M>Standby</p></div><script>
+// Z=Zoom (6 is best for regional rain), S=Tile size
+Z=6;S=256;M=document.getElementById('M');V=document.getElementById('V');
+n=()=>navigator.geolocation.getCurrentPosition(async p=>{
+  M.innerText='Fetching Tiles...';V.innerHTML='';
+  y=p.coords.latitude;x=p.coords.longitude;
+  // Convert Lat/Lon to XY Tile Coords
+  n=2**Z;r=y*Math.PI/180;
+  X=Math.floor((x+180)/360*n);
+  Y=Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n);
+  // Get latest radar timestamp
+  try{
+    j=await(await fetch('https://api.rainviewer.com/public/weather-maps.json')).json();
+    t=j.radar.past[j.radar.past.length-1].time;h=j.host;
+    // Build 3x3 Grid
+    for(g=Y-1;g<=Y+1;g++)for(f=X-1;f<=X+1;f++){
+      img=new Image();img.style.width='128px';
+      // Layering radar tile over a dark base
+      img.src=`${h}/v2/radar/${t}/${S}/${Z}/${f}/${g}/1/1_1.png`;
+      img.style.border='1px solid #222';
+      V.appendChild(img);
+    }
+    M.innerText=`Radar: ${new Date(t*1000).toLocaleTimeString()} (Z:${Z})`;
+  }catch(e){M.innerText='Offline/Err'}
+},e=>M.innerText='GPS Error');
 </script>

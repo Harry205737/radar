@@ -1,50 +1,27 @@
-<!DOCTYPE html><html><title>LAVERTON RADAR</title>
-<body style="margin:0;overflow:hidden;background:#1a1a1a;font:12px sans-serif;text-align:center;color:#fff">
-<div style="position:relative;width:512px;height:512px;margin:auto;overflow:hidden;background:#222" id=V>
- <img src="bg.png" style="width:512px;height:512px;position:absolute;top:0;left:0;z-index:1">
- <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;color:red;font:24px serif;pointer-events:none;text-shadow:1px 1px #000">+</div>
+<!DOCTYPE html><html><title>RADAR</title><body bgcolor=#fff style=margin:0;overflow:hidden>
+<div style=position:relative;width:256px;margin:auto>
+ <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none">+</div>
+ <div id=V style=background:#C4A484;width:256px;height:256px></div>
+ <div style="position:absolute;top:10;right:10;width:75px;border-bottom:2px solid #000;text-align:right;font:10px sans-serif">50km</div>
 </div>
-<p id=M style="margin:10px">Initializing...</p>
-<button onclick=c(-1)>&lt;</button>
-<button id=P onclick="A=!A">PAUSE</button>
-<button onclick=c(1)>&gt;</button>
+<div style=text-align:center>
+ <button onclick=c(-1)><</button><button onclick=g()>GPS</button><button onclick=m()>GO</button><button onclick=c(1) Gold>></button>
+ <button onclick="lt.value=47.6;ln.value=-122.3;m()">T</button><br>
+ <input id=lt placeholder=Lat size=3><input id=ln placeholder=Lon size=3>
+ <p id=M style=margin:0>...</p>
+</div>
 <script>
-V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;A=1;
-// Laverton BOM Coordinates & Settings
-LT=-37.855; LN=144.756; Z=8;
-
-f=()=>{
- fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
-  H=[];
-  j.radar.past.forEach(fr=>{
-   t=fr.time; n=2**Z; r=LT*Math.PI/180;
-   fX=(LN+180)/360*n; fY=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n;
-   iX=0|fX; iY=0|fY;
-   oX=(0.5-(fX-iX))*256; oY=(0.5-(fY-iY))*256;
-   H.push({
-    u:`${j.host}${fr.path}/256/${Z}/${iX}/${iY}/1/1_1.png`,
-    s:new Date(t*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-    t:`translate(calc(-50% + ${oX}px),calc(-50% + ${oY}px))`
-   });
-  });
-  I=H.length-1; d();
- }).catch(e=>M.innerText='Offline');
+V=document.getElementById('V');M=document.getElementById('M');H=[];I=-1;
+f=(y,x)=>{
+ fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json()).then(j=>{
+  t=j.radar.past.at(-1).time;v=64;r=y*Math.PI/180;
+  X=0|(x+180)/360*v;Y=0|(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*v;
+  H.push({u:`${j.host}/v2/radar/${t}/256/6/${X}/${Y}/0/0_0.png`,s:new Date(t*1000).toLocaleTimeString()});
+  I=H.length-1;d()
+ }).catch(e=>M.innerText='!');
 };
-
-d=()=>{
- if(H[I]){
-  e=document.getElementById('R'); if(e)e.remove();
-  V.innerHTML+=`<img id=R src="${H[I].u}" style="position:absolute;top:50%;left:50%;transform:${H[I].t};z-index:2;mix-blend-mode:screen;width:256px;filter:brightness(1.5)">`;
-  M.innerText='Laverton: '+H[I].s;
- }
-};
-
-c=n=>{I=(I+n+H.length)%H.length; d()};
-
-// Animation Loop
-setInterval(()=>{if(A)c(1)},800);
-
-// Update data every 5 mins
-setInterval(f,3e5);
-f();
+d=()=>{if(H[I]){V.innerHTML=`<img src="${H[I].u}" width=256 height=256 style=display:block>`;M.innerText=H[I].s}};
+c=n=>{if(H[I+n]){I+=n;d()}};
+m=()=>f(1*lt.value,1*ln.value);
+g=()=>navigator.geolocation.getCurrentPosition(p=>f(p.coords.latitude,p.coords.longitude),e=>M.innerText='!',{timeout:15000});
 </script></html>
